@@ -1,19 +1,18 @@
-// /pages/index.js
-import Link from 'next/link'
+'use client';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleTraineeLogin = () => {
+    router.push('/trainee/login');
+  };
+
   return (
-    <div style={{
-      direction: 'rtl',
-      padding: '2rem',
-      textAlign: 'center',
-      fontWeight: 'bold'
-    }}>
+    <main style={{ textAlign: 'center', marginTop: '100px' }}>
       <h1>مرحباً بك في منصة كابتن سلطان</h1>
       <p>منصة تدريبية لإدارة المتدربين وتتبع الأداء</p>
-      <Link href="/logins">
-        <button style={{ marginTop: '1rem' }}>دخول المتدرب</button>
-      </Link>
-    </div>
-  )
+      <button onClick={handleTraineeLogin}>دخول المتدرب</button>
+    </main>
+  );
 }

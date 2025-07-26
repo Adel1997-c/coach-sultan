@@ -1,44 +1,35 @@
-// /pages/admin.js
-import { useState } from 'react'
-import { useRouter } from 'next/router'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '../firebase/config'
+// pages/admin.js
+import { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase/config';
+import { useRouter } from 'next/router';
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-  const handleLogin = async (e) => {
-    e.preventDefault()
+  const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      router.push('/dashboard') // 🔁 REDIRECT to Dashboard
+      await signInWithEmailAndPassword(auth, email, password);
+      if (email === 'admin@coach.com') {
+        router.push('/dashboard/profile');
+      } else {
+        setError('Not authorized as admin');
+      }
     } catch (err) {
-      setError('فشل تسجيل الدخول، تحقق من البيانات')
+      setError('Invalid credentials');
     }
-  }
+  };
 
   return (
-    <div style={{ direction: 'rtl', padding: '2rem' }}>
-      <h1>تسجيل دخول المشرف</h1>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          placeholder="البريد الإلكتروني"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        /><br />
-        <input
-          type="password"
-          placeholder="كلمة المرور"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        /><br />
-        <button type="submit">دخول</button>
-      </form>
+    <div style={{ textAlign: 'center', marginTop: '100px' }}>
+      <h2>Admin Login</h2>
+      <input type="email" placeholder="Email" onChange={e => setEmail(e.target.value)} /><br />
+      <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} /><br />
+      <button onClick={handleLogin}>Login</button>
       {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
-  )
+  );
 }
