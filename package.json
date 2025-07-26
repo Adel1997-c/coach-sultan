@@ -1,0 +1,21 @@
+{
+  "name": "couch-sultan",
+  "version": "1.0.0",
+  "description": "Coach & Trainee Management App",
+  "main": "next.config.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "firebase": "^10.0.0",
+    "next": "^13.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  }
+}
