@@ -1,104 +1,82 @@
-// /pages/dashboard/add.js
-import { useState } from 'react'
-import { db, storage } from '../../firebase/config'
-import { addDoc, collection, Timestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+// pages/dashboard/add.js
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/router";
+import { db } from "../../firebase/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
-export default function AddTrainee() {
-  const [formData, setFormData] = useState({
-    name: '', age: '', weight: '', height: '',
-    goal: '', jobType: '', duration: '1', notes: '',
-    schedule: ''
-  })
-  const [image, setImage] = useState(null)
-  const [video, setVideo] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+export default function AddTraineePage() {
+  const router = useRouter();
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    age: "",
+    weight: "",
+    height: "",
+    goal: "",
+    jobType: "",
+    duration: ""
+  });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
+    e.preventDefault();
     try {
-      let imageUrl = ''
-      let videoUrl = ''
-
-      if (image) {
-        const imgRef = ref(storage, `images/${Date.now()}_${image.name}`)
-        await uploadBytes(imgRef, image)
-        imageUrl = await getDownloadURL(imgRef)
-      }
-
-      if (video) {
-        const vidRef = ref(storage, `videos/${Date.now()}_${video.name}`)
-        await uploadBytes(vidRef, video)
-        videoUrl = await getDownloadURL(vidRef)
-      }
-
-      await addDoc(collection(db, 'trainees'), {
-        ...formData,
-        weight: parseFloat(formData.weight),
-        height: parseFloat(formData.height),
-        createdAt: Timestamp.now(),
-        imageUrl,
-        videoUrl
-      })
-
-      setMessage('✅ تم إضافة المتدرب بنجاح')
-      setFormData({ name: '', age: '', weight: '', height: '', goal: '', jobType: '', duration: '1', notes: '', schedule: '' })
-      setImage(null)
-      setVideo(null)
-    } catch (err) {
-      console.error(err)
-      setMessage('❌ حدث خطأ أثناء الإضافة')
+      await addDoc(collection(db, "trainees"), form);
+      alert("Trainee added successfully!");
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error adding trainee: ", error);
+      alert("Error creating trainee");
     }
-    setLoading(false)
-  }
+  };
 
   return (
-    <div style={{ direction: 'rtl', padding: '2rem' }}>
-      <h2>إضافة متدرب جديد</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="name" placeholder="الاسم" value={formData.name} onChange={handleChange} required /><br />
-        <input name="age" placeholder="العمر" value={formData.age} onChange={handleChange} /><br />
-        <input name="weight" placeholder="الوزن" value={formData.weight} onChange={handleChange} /><br />
-        <input name="height" placeholder="الطول" value={formData.height} onChange={handleChange} /><br />
-        
-        <select name="goal" value={formData.goal} onChange={handleChange}>
-          <option value="">الهدف</option>
-          <option value="gain">زيادة وزن</option>
+    <div style={{ padding: "20px", direction: "rtl", textAlign: "right" }}>
+      <h1>➕ إضافة متدرب جديد</h1>
+      <form onSubmit={handleSubmit} style={{ maxWidth: "600px" }}>
+        <label>الاسم:</label>
+        <input name="name" value={form.name} onChange={handleChange} required /><br />
+
+        <label>البريد الإلكتروني:</label>
+        <input name="email" value={form.email} onChange={handleChange} required /><br />
+
+        <label>كلمة المرور:</label>
+        <input type="password" name="password" value={form.password} onChange={handleChange} required /><br />
+
+        <label>العمر:</label>
+        <input name="age" value={form.age} onChange={handleChange} /><br />
+
+        <label>الوزن:</label>
+        <input name="weight" value={form.weight} onChange={handleChange} /><br />
+
+        <label>الطول:</label>
+        <input name="height" value={form.height} onChange={handleChange} /><br />
+
+        <label>الهدف:</label>
+        <select name="goal" value={form.goal} onChange={handleChange}>
+          <option value="">اختر الهدف</option>
+          <option value="gain">زيادة الوزن</option>
+          <option value="lose">انقاص الوزن</option>
           <option value="bulk">ضخامة</option>
-          <option value="cut">تنشيف</option>
         </select><br />
 
-        <select name="jobType" value={formData.jobType} onChange={handleChange}>
-          <option value="">نوع العمل</option>
+        <label>نوع العمل:</label>
+        <select name="jobType" value={form.jobType} onChange={handleChange}>
+          <option value="">اختر</option>
           <option value="office">مكتبي</option>
           <option value="field">ميداني</option>
         </select><br />
 
-        <select name="duration" value={formData.duration} onChange={handleChange}>
-          {[1, 2, 3, 4, 5].map(m => (
-            <option key={m} value={m}>{m} شهر</option>
-          ))}
-        </select><br />
+        <label>مدة الاشتراك (بالأيام):</label>
+        <input name="duration" value={form.duration} onChange={handleChange} /><br /><br />
 
-        <textarea name="notes" placeholder="ملاحظات المدرب" value={formData.notes} onChange={handleChange}></textarea><br />
-        <textarea name="schedule" placeholder="جدول التمرين الأسبوعي" value={formData.schedule} onChange={handleChange}></textarea><br />
-
-        <label>رفع صورة التمارين:</label>
-        <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} /><br />
-
-        <label>رفع فيديو التمارين:</label>
-        <input type="file" accept="video/*" onChange={(e) => setVideo(e.target.files[0])} /><br />
-
-        <button type="submit" disabled={loading}>{loading ? 'جاري الإضافة...' : 'إضافة'}</button>
+        <button type="submit">إضافة المتدرب</button>
       </form>
-
-      {message && <p>{message}</p>}
     </div>
-  )
+  );
 }
