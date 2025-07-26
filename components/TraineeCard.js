@@ -1,37 +1,14 @@
-import React from "react";
+// /components/VideoPlayer.js
+export default function VideoPlayer({ src }) {
+  if (!src) return null
 
-export default function TraineeCard({ trainee, onDelete }) {
   return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        padding: "1rem",
-        marginBottom: "1rem",
-        borderRadius: "8px",
-        backgroundColor: "#f9f9f9",
-      }}
-    >
-      <h3>{trainee.name}</h3>
-      <p>الوزن: {trainee.weight} كجم</p>
-      <p>الطول: {trainee.height} سم</p>
-      <p>العمر: {trainee.age} سنة</p>
-      <p>الروتين اليومي: {trainee.dailyRoutine}</p>
-      <p>الوظيفة: {trainee.jobType}</p>
-      <p>المدة: {trainee.subscriptionDuration} شهر</p>
-      <p>الهدف: {trainee.goal}</p>
-      <button
-        onClick={onDelete}
-        style={{
-          backgroundColor: "#e74c3c",
-          color: "white",
-          padding: "5px 10px",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
-      >
-        حذف
-      </button>
+    <div style={{ direction: 'rtl', margin: '1rem 0' }}>
+      <h4>فيديو التمارين</h4>
+      <video controls width="300">
+        <source src={src} type="video/mp4" />
+        متصفحك لا يدعم تشغيل الفيديو.
+      </video>
     </div>
-  );
+  )
 }

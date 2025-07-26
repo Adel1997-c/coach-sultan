@@ -1,126 +1,104 @@
-// pages/dashboard/add.js
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../firebase/firebase";
-import { addTrainee } from "../../lib/firestore";
-import { hashPassword } from "../../lib/hash";
-import AdminNavbar from "../../components/AdminNavbar";
+// /pages/dashboard/add.js
+import { useState } from 'react'
+import { db, storage } from '../../firebase/config'
+import { addDoc, collection, Timestamp } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 export default function AddTrainee() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
-    username: "",
-    password: "",
-    weight: "",
-    height: "",
-    age: "",
-    dailyRoutine: "",
-    jobType: "مكتبية",
-    subscriptionDuration: "",
-    trainingGoal: "زيادة الوزن",
-  });
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push("/login");
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+    name: '', age: '', weight: '', height: '',
+    goal: '', jobType: '', duration: '1', notes: '',
+    schedule: ''
+  })
+  const [image, setImage] = useState(null)
+  const [video, setVideo] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
+    setLoading(true)
+    try {
+      let imageUrl = ''
+      let videoUrl = ''
 
-    const hashedPassword = await hashPassword(formData.password);
+      if (image) {
+        const imgRef = ref(storage, `images/${Date.now()}_${image.name}`)
+        await uploadBytes(imgRef, image)
+        imageUrl = await getDownloadURL(imgRef)
+      }
 
-    const traineeData = {
-      ...formData,
-      password: hashedPassword,
-    };
+      if (video) {
+        const vidRef = ref(storage, `videos/${Date.now()}_${video.name}`)
+        await uploadBytes(vidRef, video)
+        videoUrl = await getDownloadURL(vidRef)
+      }
 
-    await addTrainee(traineeData);
-    alert("تمت إضافة المتدرب بنجاح");
-    router.push("/dashboard");
-  };
+      await addDoc(collection(db, 'trainees'), {
+        ...formData,
+        weight: parseFloat(formData.weight),
+        height: parseFloat(formData.height),
+        createdAt: Timestamp.now(),
+        imageUrl,
+        videoUrl
+      })
+
+      setMessage('✅ تم إضافة المتدرب بنجاح')
+      setFormData({ name: '', age: '', weight: '', height: '', goal: '', jobType: '', duration: '1', notes: '', schedule: '' })
+      setImage(null)
+      setVideo(null)
+    } catch (err) {
+      console.error(err)
+      setMessage('❌ حدث خطأ أثناء الإضافة')
+    }
+    setLoading(false)
+  }
 
   return (
-    <div dir="rtl" style={{ padding: "2rem" }}>
-      <AdminNavbar />
-      <h1 style={{ textAlign: "center" }}>إضافة متدرب جديد</h1>
-      <form onSubmit={handleSubmit} style={{ maxWidth: "500px", margin: "auto" }}>
-        {[
-          { label: "الاسم الكامل", name: "name" },
-          { label: "اسم المستخدم", name: "username" },
-          { label: "كلمة المرور", name: "password", type: "password" },
-          { label: "الوزن (كجم)", name: "weight", type: "number" },
-          { label: "الطول (سم)", name: "height", type: "number" },
-          { label: "العمر", name: "age", type: "number" },
-          { label: "الروتين اليومي", name: "dailyRoutine" },
-          { label: "مدة الاشتراك", name: "subscriptionDuration", type: "text" },
-        ].map(({ label, name, type = "text" }) => (
-          <div key={name} style={{ marginBottom: "1rem" }}>
-            <label>{label}</label>
-            <input
-              type={type}
-              name={name}
-              value={formData[name]}
-              onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "8px", borderRadius: "5px" }}
-            />
-          </div>
-        ))}
+    <div style={{ direction: 'rtl', padding: '2rem' }}>
+      <h2>إضافة متدرب جديد</h2>
+      <form onSubmit={handleSubmit}>
+        <input name="name" placeholder="الاسم" value={formData.name} onChange={handleChange} required /><br />
+        <input name="age" placeholder="العمر" value={formData.age} onChange={handleChange} /><br />
+        <input name="weight" placeholder="الوزن" value={formData.weight} onChange={handleChange} /><br />
+        <input name="height" placeholder="الطول" value={formData.height} onChange={handleChange} /><br />
+        
+        <select name="goal" value={formData.goal} onChange={handleChange}>
+          <option value="">الهدف</option>
+          <option value="gain">زيادة وزن</option>
+          <option value="bulk">ضخامة</option>
+          <option value="cut">تنشيف</option>
+        </select><br />
 
-        <div style={{ marginBottom: "1rem" }}>
-          <label>نوع الوظيفة</label>
-          <select
-            name="jobType"
-            value={formData.jobType}
-            onChange={handleChange}
-            style={{ width: "100%", padding: "8px", borderRadius: "5px" }}
-          >
-            <option value="مكتبية">مكتبية</option>
-            <option value="ميدانية">ميدانية</option>
-          </select>
-        </div>
+        <select name="jobType" value={formData.jobType} onChange={handleChange}>
+          <option value="">نوع العمل</option>
+          <option value="office">مكتبي</option>
+          <option value="field">ميداني</option>
+        </select><br />
 
-        <div style={{ marginBottom: "1rem" }}>
-          <label>هدف التدريب</label>
-          <select
-            name="trainingGoal"
-            value={formData.trainingGoal}
-            onChange={handleChange}
-            style={{ width: "100%", padding: "8px", borderRadius: "5px" }}
-          >
-            <option value="زيادة الوزن">زيادة الوزن</option>
-            <option value="تضخيم">تضخيم</option>
-            <option value="تخسيس">تخسيس</option>
-          </select>
-        </div>
+        <select name="duration" value={formData.duration} onChange={handleChange}>
+          {[1, 2, 3, 4, 5].map(m => (
+            <option key={m} value={m}>{m} شهر</option>
+          ))}
+        </select><br />
 
-        <button
-          type="submit"
-          style={{
-            backgroundColor: "#4CAF50",
-            color: "white",
-            padding: "10px 20px",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            width: "100%"
-          }}
-        >
-          حفظ المتدرب
-        </button>
+        <textarea name="notes" placeholder="ملاحظات المدرب" value={formData.notes} onChange={handleChange}></textarea><br />
+        <textarea name="schedule" placeholder="جدول التمرين الأسبوعي" value={formData.schedule} onChange={handleChange}></textarea><br />
+
+        <label>رفع صورة التمارين:</label>
+        <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} /><br />
+
+        <label>رفع فيديو التمارين:</label>
+        <input type="file" accept="video/*" onChange={(e) => setVideo(e.target.files[0])} /><br />
+
+        <button type="submit" disabled={loading}>{loading ? 'جاري الإضافة...' : 'إضافة'}</button>
       </form>
+
+      {message && <p>{message}</p>}
     </div>
-  );
+  )
 }
